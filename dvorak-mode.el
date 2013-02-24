@@ -34,7 +34,6 @@
 (defconst dvorak:mode-indicator " Dvorak")
 (defvar dvorak:dvorak-mode nil)
 (defvar dvorak:dvorak-mode-map nil)
-(defvar dvorak:qwerty-to-dvorak-hash)
 
 (defun dvorak-mode-off ()
   "dvorak-mode off"
@@ -44,44 +43,29 @@
 
 (defun dvorak-mode-on ()
   "dvorak-mode on"
+  (dvorak-mode-map-make)
+  (setq dvorak:dvorak-mode t
+	minor-mode-map-alist (cons (cons 'dvorak:dvorak-mode dvorak:dvorak-mode-map) minor-mode-map-alist))
+  (add-to-list 'minor-mode-alist '(dvorak:dvorak-mode dvorak:mode-indicator))
+  )
+
+(defun dvorak-mode-map-make ()
+  "make dvorak-mode-map"
   (let ((escape nil)
 	(qwerty-char)
 	(dvorak-str)
 	(qwerty-key-list)
-	(dvorak-key-list))
-    (setq dvorak:qwerty-to-dvorak-hash (make-hash-table :test #'equal))
-    ;; (dotimes (i (length dvorak:qwerty-key-str))
-    ;;   (if escape
-    ;; 	  (setq qwerty-char (substring dvorak:qwerty-key-str (1- i) (1+ i))
-    ;; 		escape nil)
-    ;; 	(setq qwerty-char (substring dvorak:qwerty-key-str i (1+ i))
-    ;; 	      dvorak-char (substring dvorak:dvorak-key-str i (1+ i)))
-    ;; 	)
-    ;;   (cond ((string= qwerty-char "") nil)
-    ;; 	    ((string= qwerty-char "\\") (setq escape t))
-    ;; 	    ((string= dvorak-char "") nil)
-    ;; 	    (t (add-to-list 'qwerty-key-list qwerty-char)
-    ;; 	       (add-to-list 'dvorak-key-list dvorak-char)
-    ;; 	       )
-    ;; 	    )
-    ;;   )
+	(dvorak-key-list)
+	)
     (setq qwerty-key-list (split-string dvorak:qwerty-key-str "" "")
-	  dvorak-key-list (split-string dvorak:dvorak-key-str "" ""))
+	  dvorak-key-list (split-string dvorak:dvorak-key-str "" "")
+	  dvorak:dvorak-mode-map (make-sparse-keymap))
     (dotimes (i (length qwerty-key-list))
-      (puthash (nth i qwerty-key-list) (nth i dvorak-key-list) dvorak:qwerty-to-dvorak-hash)
-      )
-    (setq dvorak:dvorak-mode-map (make-sparse-keymap))
-    (dotimes (i (length qwerty-key-list))
-      (define-key dvorak:dvorak-mode-map (nth i qwerty-key-list) 'dvorak:insert-dvorak-key))
-    (setq dvorak:dvorak-mode t
-	  minor-mode-map-alist (cons (cons 'dvorak:dvorak-mode dvorak:dvorak-mode-map) minor-mode-map-alist))
-    (add-to-list 'minor-mode-alist '(dvorak:dvorak-mode dvorak:mode-indicator))
-    ))
-
-(defun dvorak:insert-dvorak-key ()
-  (interactive)
-  (insert (gethash (char-to-string last-command-event) dvorak:qwerty-to-dvorak-hash))
-  )
+      (if (not (eq (nth i dvorak-key-list) nil))
+	  (define-key dvorak:dvorak-mode-map (nth i qwerty-key-list)
+	    `(lambda () (interactive) (insert ,(nth i dvorak-key-list))))
+	))
+  ))
 
 (defun dvorak-mode () "dvorak-mode"
   (interactive)
